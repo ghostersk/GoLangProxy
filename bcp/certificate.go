@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"time"
@@ -59,7 +60,7 @@ func generateSelfSignedCert() error {
 	}
 	certOut.Close()
 
-	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_WRONLY, 0600)
+	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open %s for writing: %v", keyPath, err)
 	}
@@ -69,7 +70,7 @@ func generateSelfSignedCert() error {
 	}
 	keyOut.Close()
 
-	refreshLogger.Printf("Generated self-signed certificate in %s", certDir)
+	log.Printf("Generated self-signed certificate in %s", certDir)
 	return nil
 }
 
@@ -99,23 +100,23 @@ func monitorCertificates() {
 	for {
 		certInfo, err := os.Stat(certPath)
 		if err != nil {
-			errorLogger.Printf("Error checking certificate: %v", err)
+			log.Printf("Error checking certificate: %v", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		keyInfo, err := os.Stat(keyPath)
 		if err != nil {
-			errorLogger.Printf("Error checking key: %v", err)
+			log.Printf("Error checking key: %v", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		if certInfo.ModTime() != lastModTime || keyInfo.ModTime() != lastModTime {
 			if err := loadCertificate(); err != nil {
-				errorLogger.Printf("Error reloading certificate: %v", err)
+				log.Printf("Error reloading certificate: %v", err)
 			} else {
-				refreshLogger.Println("Certificate reloaded successfully")
+				log.Println("Certificate reloaded successfully")
 				lastModTime = certInfo.ModTime()
 			}
 		}
