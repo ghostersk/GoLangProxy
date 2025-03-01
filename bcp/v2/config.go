@@ -8,19 +8,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config defines the structure of the proxy configuration loaded from config.yaml
 type Config struct {
-	ListenHTTP      string            `yaml:"listen_http"`       // Port for HTTP server (e.g., ":80")
-	ListenHTTPS     string            `yaml:"listen_https"`      // Port for HTTPS server (e.g., ":443")
-	CertDir         string            `yaml:"cert_dir"`          // Directory for certificate files
-	CertFile        string            `yaml:"cert_file"`         // Certificate filename
-	KeyFile         string            `yaml:"key_file"`          // Private key filename
-	Routes          map[string]string `yaml:"routes"`            // Mapping of hostnames to target URLs
-	TrustTarget     map[string]bool   `yaml:"trust_target"`      // Whether to skip TLS verification for targets
-	NoHTTPSRedirect map[string]bool   `yaml:"no_https_redirect"` // Whether to skip HTTP->HTTPS redirect
+	ListenHTTP      string            `yaml:"listen_http"`
+	ListenHTTPS     string            `yaml:"listen_https"`
+	CertDir         string            `yaml:"cert_dir"`
+	CertFile        string            `yaml:"cert_file"`
+	KeyFile         string            `yaml:"key_file"`
+	Routes          map[string]string `yaml:"routes"`
+	TrustTarget     map[string]bool   `yaml:"trust_target"`
+	NoHTTPSRedirect map[string]bool   `yaml:"no_https_redirect"`
 }
 
-// loadConfig reads and parses the config.yaml file
 func loadConfig() (Config, error) {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -28,36 +26,35 @@ func loadConfig() (Config, error) {
 	}
 
 	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	err = yaml.Unmarshal(data, &cfg)
+	if err != nil {
 		return Config{}, fmt.Errorf("failed to unmarshal config: %v", err)
 	}
 	return cfg, nil
 }
 
-// generateDefaultConfig creates a default configuration if config.yaml doesn’t exist
 func generateDefaultConfig() Config {
 	return Config{
 		ListenHTTP:  ":80",
 		ListenHTTPS: ":443",
-		CertDir:     "./certificate",
+		CertDir:     "certificates",
 		CertFile:    "certificate.pem",
 		KeyFile:     "key.pem",
 		Routes: map[string]string{
-			"*":                "https://127.0.0.1:3000",      // Wildcard route
-			"main.example.com": "https://10.100.111.254:4444", // Specific route
+			"*":                "https://127.0.0.1:3000",
+			"main.example.com": "https://10.100.111.254:4444",
 		},
 		TrustTarget: map[string]bool{
-			"*":                true, // Skip TLS verification by default
+			"*":                true,
 			"main.example.com": true,
 		},
 		NoHTTPSRedirect: map[string]bool{
-			"*":                false, // Redirect HTTP to HTTPS by default
+			"*":                false,
 			"main.example.com": false,
 		},
 	}
 }
 
-// saveConfig writes the configuration to config.yaml
 func saveConfig(cfg Config) error {
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		return fmt.Errorf("failed to create base directory %s: %v", baseDir, err)
@@ -68,13 +65,13 @@ func saveConfig(cfg Config) error {
 		return fmt.Errorf("failed to marshal config: %v", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	err = os.WriteFile(configPath, data, 0644)
+	if err != nil {
 		return fmt.Errorf("failed to write config to %s: %v", configPath, err)
 	}
 	return nil
 }
 
-// monitorConfig watches config.yaml for changes and updates the in-memory config
 func monitorConfig() {
 	var lastModTime time.Time
 	for {
@@ -91,7 +88,6 @@ func monitorConfig() {
 				errorLogger.Printf("Error reloading config: %v", err)
 			} else {
 				configMux.Lock()
-				// Update individual fields only if they’ve changed
 				if newConfig.ListenHTTP != config.ListenHTTP {
 					config.ListenHTTP = newConfig.ListenHTTP
 					refreshLogger.Printf("Updated listen_http to %s", config.ListenHTTP)
@@ -111,7 +107,6 @@ func monitorConfig() {
 						refreshLogger.Println("Updated certificate paths and reloaded certificate")
 					}
 				}
-				// Update routes
 				for k, v := range newConfig.Routes {
 					if oldV, exists := config.Routes[k]; !exists || oldV != v {
 						config.Routes[k] = v
@@ -124,7 +119,6 @@ func monitorConfig() {
 						refreshLogger.Printf("Removed route %s", k)
 					}
 				}
-				// Update trust_target
 				for k, v := range newConfig.TrustTarget {
 					if oldV, exists := config.TrustTarget[k]; !exists || oldV != v {
 						config.TrustTarget[k] = v
@@ -137,7 +131,6 @@ func monitorConfig() {
 						refreshLogger.Printf("Removed trust_target %s", k)
 					}
 				}
-				// Update no_https_redirect
 				for k, v := range newConfig.NoHTTPSRedirect {
 					if oldV, exists := config.NoHTTPSRedirect[k]; !exists || oldV != v {
 						config.NoHTTPSRedirect[k] = v
@@ -155,6 +148,6 @@ func monitorConfig() {
 				lastModTime = configInfo.ModTime()
 			}
 		}
-		time.Sleep(5 * time.Second) // Poll every 5 seconds
+		time.Sleep(5 * time.Second)
 	}
 }
