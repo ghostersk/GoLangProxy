@@ -1,0 +1,16 @@
+listen_http: :80
+listen_https: :443
+cert_file: ./crt/certificate.pem
+key_file: ./crt/key.pem
+routes:
+  '*': http://127.0.0.1:61147
+  gg.example.com: https://example.com:443
+  main.example.com: https://10.100.111.254:4444
+trust_target:
+  '*': true
+  gg.example.com: false
+  main.example.com: true
+no_https_redirect:
+  '*': false
+  gg.example.com: true
+  main.example.com: false

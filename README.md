@@ -25,17 +25,19 @@ no_https_redirect:
   '*': false
   main.example.com: true 
 ```
-### setup project
-go mod init proxy
+### setup project - powershell:
+go mod init golangproxy ; go mod tidy
+### setup project - cmd,bash:
+go mod init golangproxy && go mod tidy
 
 ### Running Proxy app without compiling.
-go run main.go config.go certificate.go proxy.go utils.go
+go run main.go
 
 ### Building app:
-go build -o proxy
+go build -o build/golangproxy.exe
+go build -ldflags="-H=windowsgui" -o build/golangproxy.exe
 
-## Thins to do:
-- improve performance
-- add logging to a file - failures, refreshed config or certificate, logging for proxied traffic
-- solve issue where some https proxy queries are rejected by other side (could be just issue with my test target)
-- solve issue when the app randomly starts refershing cert without certificate being changed
+### Known issue.
+- currently there is logic to proxy ip address target differently then hostname target.
+- this is because if same logic is applied for hostname as for IP target the IP target may experience issue with sessions ( I am not expert, so I do not know what causing it, but some sessions been dicsonnected, part of the website was not acting as normal)
+- if logic applied for IP target is applied for hostname Target the website may not load or will be 404
